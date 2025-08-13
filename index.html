@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>AI Network Incident Analyzer - Enterprise Edition</title>
+  <link rel="stylesheet" href="style.css" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
+  <link rel="stylesheet" type="text/css" href="https://unpkg.com/vis-network/styles/vis-network.css" />
+</head>
+<body>
+  <div id="auth-container" class="auth-container">
+    <div class="auth-panel">
+      <h1>🌐 AI Network Incident Analyzer</h1>
+      
+      <div id="login-section">
+        <input type="text" id="username" placeholder="👤 Network Administrator" required>
+        <input type="password" id="password" placeholder="🔒 Secure Password" required>
+        <button onclick="login()">🚀 Access Network Center</button>
+        <div id="login-error"></div>
+        <p style="text-align: center; margin-top: 20px; color: rgba(255,255,255,0.8);">
+          New to network monitoring? 
+          <a href="#" onclick="showRegister()" style="color: #4fc3f7;">Create Admin Account</a>
+        </p>
+      </div>
+
+      <div id="register-section" style="display: none;">
+        <input type="text" id="new-username" placeholder="👤 Choose Admin Username" required>
+        <input type="password" id="new-password" placeholder="🔒 Create Secure Password" required>
+        <button onclick="register()">🛡️ Create Network Admin</button>
+        <div id="register-msg"></div>
+        <p style="text-align: center; margin-top: 20px; color: rgba(255,255,255,0.8);">
+          Already have an account? 
+          <a href="#" onclick="showLogin()" style="color: #4fc3f7;">Sign In Here</a>
+        </p>
+      </div>
+      
+      <div style="text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid rgba(0,188,212,0.2);">
+        <button onclick="showHelp()" style="background: rgba(79,195,247,0.1) !important; border: 1px solid rgba(79,195,247,0.3) !important; padding: 8px 16px !important; font-size: 14px !important;">ℹ️ Help & Documentation</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="main-app" id="main-app" style="display:none;">
+    <header class="app-header">
+      <h1>🧠 AI Network Analyzer - Enterprise Edition</h1>
+      <div class="user-info">
+        <span id="current-user-display"></span>
+        <button onclick="showHelp()" style="background: linear-gradient(45deg, #9b59b6, #8e44ad) !important; padding: 8px 16px !important; font-size: 12px !important;">ℹ️ Help</button>
+        <button onclick="logout()" class="logout-btn">Logout</button>
+      </div>
+    </header>
+
+    <!-- Navigation Tabs -->
+    <nav class="nav-tabs">
+      <button class="nav-tab active" onclick="showTab('dashboard')">📊 Dashboard</button>
+      <button class="nav-tab" onclick="showTab('topology')">🌐 Network Topology</button>
+      <button class="nav-tab" onclick="showTab('analytics')">📈 Advanced Analytics</button>
+      <button class="nav-tab" onclick="showTab('analysis')">🤖 AI Analysis</button>
+    </nav>
+
+    <!-- Dashboard Tab -->
+    <div id="dashboard-tab" class="tab-content active">
+      <div class="dashboard-container">
+        <div class="status-cards">
+          <div class="status-card">
+            <h3>🟢 Network Status</h3>
+            <div id="network-status" class="status-value">Monitoring...</div>
+          </div>
+          <div class="status-card">
+            <h3>📊 Active Connections</h3>
+            <div id="active-connections" class="status-value">0</div>
+          </div>
+          <div class="status-card">
+            <h3>⚡ Latency</h3>
+            <div id="avg-latency" class="status-value">0 ms</div>
+          </div>
+          <div class="status-card">
+            <h3>🚨 Alerts</h3>
+            <div id="alert-count" class="status-value">0</div>
+          </div>
+        </div>
+
+        <div class="charts-container">
+          <div class="chart-section">
+            <h3>Network Traffic (Real-time)</h3>
+            <canvas id="trafficChart" width="400" height="150"></canvas>
+          </div>
+          <div class="chart-section">
+            <h3>System Resources</h3>
+            <canvas id="resourceChart" width="400" height="150"></canvas>
+          </div>
+        </div>
+
+        <div class="alerts-container">
+          <h3>🚨 Live Network Alerts</h3>
+          <div id="alerts-feed" class="alerts-feed"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Network Topology Tab -->
+    <div id="topology-tab" class="tab-content">
+      <div class="topology-container">
+        <div class="topology-header">
+          <h2>🌐 Network Topology & Device Mapping</h2>
+          <div class="topology-controls">
+            <button onclick="refreshTopology()">🔄 Refresh Topology</button>
+            <button onclick="autoDiscoverDevices()">🔍 Auto-Discover</button>
+            <button onclick="exportTopology()">📤 Export Map</button>
+            <select id="topology-layout" onchange="changeTopologyLayout()">
+              <option value="hierarchical">Hierarchical</option>
+              <option value="force">Force-based</option>
+              <option value="circular">Circular</option>
+            </select>
+          </div>
+        </div>
+        
+        <div class="topology-main">
+          <div class="topology-sidebar">
+            <div class="device-legend">
+              <h4>Device Types</h4>
+              <div class="legend-item"><span class="legend-color router"></span> Routers</div>
+              <div class="legend-item"><span class="legend-color switch"></span> Switches</div>
+              <div class="legend-item"><span class="legend-color firewall"></span> Firewalls</div>
+              <div class="legend-item"><span class="legend-color server"></span> Servers</div>
+              <div class="legend-item"><span class="legend-color endpoint"></span> Endpoints</div>
+            </div>
+            
+            <div class="topology-stats">
+              <h4>Network Statistics</h4>
+              <div class="stat-item">
+                <span>Total Devices:</span>
+                <span id="total-devices">0</span>
+              </div>
+              <div class="stat-item">
+                <span>Active Links:</span>
+                <span id="active-links">0</span>
+              </div>
+              <div class="stat-item">
+                <span>Network Segments:</span>
+                <span id="network-segments">0</span>
+              </div>
+              <div class="stat-item">
+                <span>Redundant Paths:</span>
+                <span id="redundant-paths">0</span>
+              </div>
+            </div>
+
+            <div class="selected-device-info">
+              <h4>Device Information</h4>
+              <div id="device-details">
+                <p style="opacity: 0.7;">Click on a device to view details</p>
+              </div>
+            </div>
+          </div>
+          
+          <div class="topology-visualization">
+            <div id="network-topology" class="network-topology-container"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Advanced Analytics Tab -->
+    <div id="analytics-tab" class="tab-content">
+      <div class="analytics-container">
+        <div class="analytics-header">
+          <h2>📈 Advanced Network Analytics & Insights</h2>
+          <div class="analytics-controls">
+            <select id="analytics-timeframe" onchange="updateAnalyticsTimeframe()">
+              <option value="1h">Last Hour</option>
+              <option value="6h">Last 6 Hours</option>
+              <option value="24h" selected>Last 24 Hours</option>
+              <option value="7d">Last 7 Days</option>
+              <option value="30d">Last 30 Days</option>
+            </select>
+            <button onclick="generateAnalyticsReport()">📊 Generate Report</button>
+            <button onclick="predictNetworkTrends()">🔮 Predict Trends</button>
+          </div>
+        </div>
+
+        <div class="analytics-grid">
+          <!-- Performance Metrics -->
+          <div class="analytics-section">
+            <h3>⚡ Performance Metrics</h3>
+            <div class="metrics-grid">
+              <div class="metric-card">
+                <div class="metric-label">Avg Response Time</div>
+                <div class="metric-value" id="avg-response-time">0ms</div>
+                <div class="metric-trend" id="response-trend">↗️ +2.3%</div>
+              </div>
+              <div class="metric-card">
+                <div class="metric-label">Throughput</div>
+                <div class="metric-value" id="throughput">0 Mbps</div>
+                <div class="metric-trend" id="throughput-trend">↗️ +5.1%</div>
+              </div>
+              <div class="metric-card">
+                <div class="metric-label">Packet Loss</div>
+                <div class="metric-value" id="packet-loss">0%</div>
+                <div class="metric-trend" id="loss-trend">↘️ -0.8%</div>
+              </div>
+              <div class="metric-card">
+                <div class="metric-label">Jitter</div>
+                <div class="metric-value" id="jitter">0ms</div>
+                <div class="metric-trend" id="jitter-trend">↘️ -1.2%</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Traffic Analysis -->
+          <div class="analytics-section">
+            <h3>📊 Traffic Analysis</h3>
+            <canvas id="trafficAnalyticsChart" width="400" height="200"></canvas>
+          </div>
+
+          <!-- Bandwidth Utilization Heatmap -->
+          <div class="analytics-section">
+            <h3>🔥 Bandwidth Utilization Heatmap</h3>
+            <div id="bandwidth-heatmap" class="heatmap-container">
+              <div class="heatmap-grid" id="heatmap-grid"></div>
+              <div class="heatmap-legend">
+                <span class="legend-low">Low</span>
+                <span class="legend-medium">Medium</span>
+                <span class="legend-high">High</span>
+                <span class="legend-critical">Critical</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Top Talkers -->
+          <div class="analytics-section">
+            <h3>👥 Top Talkers</h3>
+            <div id="top-talkers" class="top-talkers-list"></div>
+          </div>
+
+          <!-- Network Health Score -->
+          <div class="analytics-section">
+            <h3>💚 Network Health Score</h3>
+            <div class="health-score-container">
+              <div class="health-score-gauge">
+                <canvas id="healthScoreGauge" width="200" height="200"></canvas>
+              </div>
+              <div class="health-metrics">
+                <div class="health-metric">
+                  <span>Availability:</span>
+                  <span id="availability-score">99.9%</span>
+                </div>
+                <div class="health-metric">
+                  <span>Performance:</span>
+                  <span id="performance-score">95.2%</span>
+                </div>
+                <div class="health-metric">
+                  <span>Security:</span>
+                  <span id="security-score">98.7%</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Predictive Analytics -->
+          <div class="analytics-section">
+            <h3>🔮 Predictive Analytics</h3>
+            <canvas id="predictiveChart" width="400" height="200"></canvas>
+          </div>
+
+          <!-- Network Events Timeline -->
+          <div class="analytics-section full-width">
+            <h3>📅 Network Events Timeline</h3>
+            <div id="events-timeline" class="timeline-container">
+              <div class="timeline" id="network-timeline"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- AI Analysis Tab -->
+    <div id="analysis-tab" class="tab-content">
+      <div class="analysis-container">
+        <h3>📝 Log Analysis & AI Insights</h3>
+        <div class="input-section">
+          <textarea id="log-input" placeholder="Paste network logs here for AI analysis..."></textarea>
+          <div class="analysis-buttons">
+            <button onclick="analyzeLogAI()">🤖 AI Analyze</button>
+            <button onclick="analyzeLogPattern()">🔍 Pattern Analyze</button>
+            <button onclick="clearAnalysis()">🗑️ Clear</button>
+          </div>
+        </div>
+        <div id="analysis-output" class="analysis-output"></div>
+      </div>
+
+      <div class="monitoring-controls">
+        <h3>⚙️ Monitoring Configuration</h3>
+        <div class="control-section">
+          <label for="auto-monitor">Auto-Monitor</label>
+          <input type="checkbox" id="auto-monitor" onchange="toggleAutoMonitoring()" checked>
+        </div>
+        <div class="control-section">
+          <label for="refresh-rate">Refresh Rate</label>
+          <select id="refresh-rate" onchange="updateRefreshRate()">
+            <option value="2000">2 seconds</option>
+            <option value="5000" selected>5 seconds</option>
+            <option value="10000">10 seconds</option>
+          </select>
+        </div>
+        <button onclick="simulateIncident()" class="control-btn">🚨 Simulate Incident</button>
+        <button onclick="demoEnhancedAnalysis()" class="control-btn" style="background: linear-gradient(45deg, #9c27b0, #673ab7);">🔬 Demo Enhanced Analysis</button>
+      </div>
+
+      <div class="export-section">
+        <h3>📤 Export Options</h3>
+        <button onclick="exportDetailedPDF()">📄 Detailed PDF Report</button>
+        <button onclick="exportCSV()">📊 Export CSV Data</button>
+        <button onclick="exportJSON()">💾 Export JSON Data</button>
+        <button onclick="exportTopologyPDF()">🌐 Topology Report</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Help Modal -->
+  <div id="help-modal" class="modal" style="display: none;">
+    <div class="modal-content">
+      <span class="close" onclick="closeHelp()">&times;</span>
+      <h2>🚀 AI Network Analyzer Enterprise - User Guide</h2>
+      
+      <div class="help-section">
+        <h3>📊 Dashboard Tab</h3>
+        <p>Real-time monitoring with live status cards, traffic charts, and alert feeds. Watch your network metrics update every 5 seconds!</p>
+        <ul>
+          <li><strong>Status Cards:</strong> Network health, connections, latency, alerts</li>
+          <li><strong>Live Charts:</strong> Real-time traffic and resource utilization</li>
+          <li><strong>Alert Feed:</strong> Live network alerts with severity indicators</li>
+        </ul>
+      </div>
+
+      <div class="help-section">
+        <h3>🌐 Network Topology Tab</h3>
+        <p>Interactive network visualization with device discovery and mapping.</p>
+        <ul>
+          <li><strong>Click devices</strong> to view details (CPU, memory, uptime)</li>
+          <li><strong>Auto-Discover:</strong> Automatically find new network devices</li>
+          <li><strong>Layouts:</strong> Switch between hierarchical, force-based, and circular</li>
+          <li><strong>Ping/Trace:</strong> Test connectivity to any device</li>
+        </ul>
+      </div>
+
+      <div class="help-section">
+        <h3>📈 Advanced Analytics Tab</h3>
+        <p>Comprehensive network analytics with predictive insights.</p>
+        <ul>
+          <li><strong>Performance Metrics:</strong> Response time, throughput, packet loss, jitter</li>
+          <li><strong>Heatmap:</strong> 7-day bandwidth utilization patterns</li>
+          <li><strong>Top Talkers:</strong> Highest bandwidth consumers</li>
+          <li><strong>Health Score:</strong> Overall network health gauge</li>
+          <li><strong>Predictions:</strong> AI-powered network trend forecasting</li>
+        </ul>
+      </div>
+
+      <div class="help-section">
+        <h3>🤖 AI Analysis Tab</h3>
+        <p>Intelligent log analysis with network command suggestions.</p>
+        <ul>
+          <li><strong>AI Analyze:</strong> Advanced pattern recognition with confidence scoring</li>
+          <li><strong>Pattern Analyze:</strong> Traditional keyword-based analysis</li>
+          <li><strong>Command Suggestions:</strong> Click any command to copy to clipboard</li>
+          <li><strong>Export Options:</strong> PDF, CSV, JSON, and topology reports</li>
+        </ul>
+      </div>
+
+      <div class="help-section">
+        <h3>📋 Sample Network Logs for Analysis</h3>
+        <p>Try pasting these sample logs to see the detailed troubleshooting features:</p>
+        
+        <div style="margin-bottom: 20px;">
+          <h4 style="color: #e74c3c;">🚨 Critical BGP Issue Example:</h4>
+          <textarea readonly onclick="this.select()" style="width: 100%; height: 120px; font-family: monospace; font-size: 12px; background: rgba(0,0,0,0.3); color: #fff; border: 1px solid #4fc3f7; border-radius: 5px; padding: 10px;">
+%BGP-3-NOTIFICATION: sent to neighbor 192.168.1.100 active 4/0 (hold time expired) 0 bytes
+%BGP-5-NBR_RESET: Neighbor 192.168.1.100 reset (BGP Notification sent)
+%BGP-5-ADJCHANGE: neighbor 192.168.1.100 Down BGP Neighbor changed state to Idle
+Router# show ip bgp summary reveals 0 prefixes received from peer
+WAN interface Gi0/0 showing intermittent carrier drops
+Physical layer: Cable connection appears loose on WAN port</textarea>
+        </div>
+
+        <div style="margin-bottom: 20px;">
+          <h4 style="color: #ff9800;">⚠️ Port Security Violation Example:</h4>
+          <textarea readonly onclick="this.select()" style="width: 100%; height: 120px; font-family: monospace; font-size: 12px; background: rgba(0,0,0,0.3); color: #fff; border: 1px solid #4fc3f7; border-radius: 5px; padding: 10px;">
+%ETHCNTR-3-NO_CARRIER: FastEthernet0/15: link is down
+%PORT_SECURITY-2-PSECURE_VIOLATION: Security violation on interface FastEthernet0/15
+%PM-4-ERR_DISABLE: psecure-violation error detected on Fa0/15, putting interface in error-disabled state
+%LINEPROTO-5-UPDOWN: Line protocol on Interface FastEthernet0/15, changed state to down
+show interfaces status err-disabled shows Fa0/15 in err-disabled state
+Unknown MAC address 00:1B:44:11:3A:B7 detected on port</textarea>
+        </div>
+
+        <div style="margin-bottom: 20px;">
+          <h4 style="color: #f39c12;">🔥 High CPU Usage Example:</h4>
+          <textarea readonly onclick="this.select()" style="width: 100%; height: 120px; font-family: monospace; font-size: 12px; background: rgba(0,0,0,0.3); color: #fff; border: 1px solid #4fc3f7; border-radius: 5px; padding: 10px;">
+%SYS-1-CPUHOG: Task is running for (2001)msecs, more than (2000)msecs
+CPU utilization for five seconds: 95%/85%; one minute: 88%; five minutes: 82%
+Process: IP Input, CPU time: 4.2s/2.5s, Invoked: 12440 times
+Process: BGP Router, CPU time: 3.8s/1.9s, Invoked: 8932 times  
+show processes cpu sorted reveals unusual activity
+Device temperature: 68°C (154°F) - approaching thermal limits</textarea>
+        </div>
+
+        <div style="margin-bottom: 20px;">
+          <h4 style="color: #9c27b0;">🛡️ Authentication Issues Example:</h4>
+          <textarea readonly onclick="this.select()" style="width: 100%; height: 120px; font-family: monospace; font-size: 12px; background: rgba(0,0,0,0.3); color: #fff; border: 1px solid #4fc3f7; border-radius: 5px; padding: 10px;">
+%SEC_LOGIN-4-LOGIN_FAILED: Login failed [user: admin] [Source: 192.168.50.100] at 14:23:47 UTC
+%SEC_LOGIN-4-LOGIN_FAILED: Login failed [user: admin] [Source: 192.168.50.100] at 14:23:52 UTC
+%SEC_LOGIN-4-LOGIN_FAILED: Login failed [user: root] [Source: 192.168.50.100] at 14:24:01 UTC
+%AAA-3-ACCT_LOW_MEM_UID_FAIL: AAA unable to create UID for incoming calls
+Multiple authentication attempts detected from suspicious IP addresses
+TACACS+ server not responding - falling back to local authentication</textarea>
+        </div>
+
+        <div style="margin-bottom: 20px;">
+          <h4 style="color: #2196f3;">🌐 Interface Problems Example:</h4>
+          <textarea readonly onclick="this.select()" style="width: 100%; height: 120px; font-family: monospace; font-size: 12px; background: rgba(0,0,0,0.3); color: #fff; border: 1px solid #4fc3f7; border-radius: 5px; padding: 10px;">
+%LINK-3-UPDOWN: Interface GigabitEthernet0/1, changed state to down
+%LINEPROTO-5-UPDOWN: Line protocol on Interface GigabitEthernet0/1, changed state to down
+Interface Gi0/1: Input errors: 1247, CRC errors: 892, Collisions: 456
+Duplex mismatch detected: Local(Full) Remote(Half)
+Cable test results: Pair A OK, Pair B Short at 45 meters
+Physical inspection needed - connector damage visible</textarea>
+        </div>
+
+        <div style="background: rgba(0,188,212,0.1); padding: 15px; border-radius: 8px; border-left: 4px solid #00bcd4;">
+          <h4 style="color: #4fc3f7; margin-top: 0;">💡 Pro Tips:</h4>
+          <ul style="margin: 10px 0; padding-left: 20px;">
+            <li>Include timestamp and severity information for more accurate analysis</li>
+            <li>Add physical observations (temperature, LED status, cable condition) for comprehensive diagnosis</li>
+            <li>Paste multiple related log entries to help identify patterns and root causes</li>
+            <li>Include interface statistics and error counters when available</li>
+            <li>The AI will provide step-by-step troubleshooting, physical checks, and prevention measures</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="help-section">
+        <h3>💡 Tips:</h3>
+        <ul>
+          <li>User sessions persist for 7 days with auto-login</li>
+          <li>Data auto-saves every 30 seconds</li>
+          <li>Use "Simulate Incident" to test alerting system</li>
+          <li>All reports include your user information and timestamps</li>
+          <li>Switch between different analytics timeframes for deeper insights</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
